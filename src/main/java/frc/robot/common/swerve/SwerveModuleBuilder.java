@@ -202,6 +202,8 @@ public class SwerveModuleBuilder {
         Supplier<Double> distanceSupplier;
         Consumer<Double> speedConsumer;
         Consumer<Rotation2d> angleConsumer;
+        Object driveMotor;
+        Object turnMotor;
         double maxSpeedMPS = 0;
 
         // This uses the turnEncoderAbsolute to reset the motor encoder to make sure they match.
@@ -223,11 +225,14 @@ public class SwerveModuleBuilder {
             speedConsumer = (Double speed) -> {
                 pidController.setReference(speed, ControlType.kVelocity, 0, driveFeedforward.calculate(speed));
             };
+            driveMotor = sparkMaxDriveMotor;
         } else if (falconDriveMotor != null) {
             // TODO
             distanceSupplier = null;
             speedSupplier = null;
             speedConsumer = null;
+
+            driveMotor = falconDriveMotor;
             throw new IllegalStateException("Falcons are not supported yet");
         } else {
             throw new IllegalStateException("Drive motor has not been set");
@@ -255,10 +260,14 @@ public class SwerveModuleBuilder {
                     encoder.setPosition(turnEncoderAbsolute.get() * (1 / turnEncoderAbsoluteRatio) + turnEncoderAbsoluteOffset);
                 }
             };
+
+            turnMotor = sparkMaxTurnMotor;
         } else if (falconTurnMotor != null) {
             // TODO
             angleSupplier = null;
             angleConsumer = null;
+
+            turnMotor = falconTurnMotor;
             throw new IllegalStateException("Falcons are not supported yet");
         } else {
             throw new IllegalStateException("Turn motor has not been set");
@@ -272,7 +281,7 @@ public class SwerveModuleBuilder {
             throw new IllegalStateException("Something went wrong building the SwerveModule");
         }
 
-        return new SwerveModule(location, speedSupplier, angleSupplier, distanceSupplier, speedConsumer, angleConsumer, recalibrate, maxSpeedMPS);
+        return new SwerveModule(location, speedSupplier, angleSupplier, distanceSupplier, speedConsumer, angleConsumer, recalibrate, driveMotor, turnMotor, maxSpeedMPS);
     }
 
 }
