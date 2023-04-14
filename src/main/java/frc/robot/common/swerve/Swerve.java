@@ -12,7 +12,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-/** Add your docs here. */
+/** A swerve drivetrain subsystem will extend this class. */
 public abstract class Swerve extends SubsystemBase {
     protected abstract SwerveConstellation getConstellation();
     public abstract Rotation2d getGyroscopeRotation();

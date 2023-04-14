@@ -13,14 +13,14 @@ import edu.wpi.first.math.trajectory.constraint.SwerveDriveKinematicsConstraint;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 
-/** Add your docs here. */
+/** A collection of swerve modules belonging to a particular drivetrain subsystem. */
 public class SwerveConstellation implements Sendable {
     public final SwerveModule[] modules;
     public final SwerveDriveKinematics kinematics;
     public final SwerveDriveKinematicsConstraint kinematicsConstraint;
     public final double MAX_SPEED_METERS_PER_SECOND;
 
-    public SwerveConstellation(SwerveModule ...modules) {
+    public SwerveConstellation(SwerveModule... modules) {
         this.modules = modules;
         this.kinematics = SwerveModule.computeKinematics(modules);
 

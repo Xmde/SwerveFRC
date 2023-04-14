@@ -6,7 +6,6 @@ package frc.robot.common.swerve;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -14,13 +13,14 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.ControlType;
-
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import frc.robot.devices.FalconController;
+import frc.robot.devices.SparkMaxController;
 
-/** Add your docs here. */
+/** Constructs a SwerveModule. */
 public class SwerveModuleBuilder {
 
     public static enum SWERVE_MODULE_PRESETS {
@@ -272,7 +272,19 @@ public class SwerveModuleBuilder {
             throw new IllegalStateException("Something went wrong building the SwerveModule");
         }
 
-        return new SwerveModule(location, speedSupplier, angleSupplier, distanceSupplier, speedConsumer, angleConsumer, recalibrate, maxSpeedMPS);
+        return new SwerveModule(
+            location,
+            speedSupplier,
+            angleSupplier,
+            distanceSupplier,
+            speedConsumer,
+            angleConsumer,
+            recalibrate,
+            maxSpeedMPS,
+            sparkMaxDriveMotor != null ? new SparkMaxController(sparkMaxDriveMotor)
+                : new FalconController(falconDriveMotor),
+            sparkMaxTurnMotor != null ? new SparkMaxController(sparkMaxTurnMotor)
+                : new FalconController(falconTurnMotor)
+        );
     }
-
 }
