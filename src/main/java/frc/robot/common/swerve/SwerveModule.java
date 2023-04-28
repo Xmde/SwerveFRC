@@ -3,7 +3,6 @@ package frc.robot.common.swerve;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -13,8 +12,9 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 
-public class SwerveModule implements Sendable{
-    public static void setModuleStates(SwerveModuleState[] states, SwerveModule ...modules) {
+/** Represents an individual swerve module. */
+public class SwerveModule implements Sendable {
+    public static void setModuleStates(SwerveModuleState[] states, SwerveModule... modules) {
         // First we need to check if there are the same number of modules and states
         if (modules.length != states.length) {
             throw new IllegalArgumentException("The number of modules and states must be the same");
@@ -25,7 +25,7 @@ public class SwerveModule implements Sendable{
         }
     }
 
-    public static SwerveModuleState[] computeModuleStates(SwerveModule ...modules) {
+    public static SwerveModuleState[] computeModuleStates(SwerveModule... modules) {
         ArrayList<SwerveModuleState> states = new ArrayList<>();
 
         for (SwerveModule module : modules) {
@@ -35,7 +35,7 @@ public class SwerveModule implements Sendable{
         return states.toArray(new SwerveModuleState[0]);
     }
 
-    public static SwerveModulePosition[] computeModulePositions(SwerveModule ...modules) {
+    public static SwerveModulePosition[] computeModulePositions(SwerveModule... modules) {
         ArrayList<SwerveModulePosition> positions = new ArrayList<>();
 
         for (SwerveModule module : modules) {
@@ -45,7 +45,7 @@ public class SwerveModule implements Sendable{
         return positions.toArray(new SwerveModulePosition[0]);
     }
 
-    public static SwerveDriveKinematics computeKinematics(SwerveModule ...modules) {
+    public static SwerveDriveKinematics computeKinematics(SwerveModule... modules) {
         ArrayList<Translation2d> locations = new ArrayList<>();
 
         for (SwerveModule module : modules) {
@@ -55,11 +55,11 @@ public class SwerveModule implements Sendable{
         return new SwerveDriveKinematics(locations.toArray(new Translation2d[0]));
     }
 
-    public static ChassisSpeeds computeChassisSpeeds(SwerveDriveKinematics kinematics, SwerveModule ...modules) {
+    public static ChassisSpeeds computeChassisSpeeds(SwerveDriveKinematics kinematics, SwerveModule... modules) {
         return kinematics.toChassisSpeeds(computeModuleStates(modules));
     }
 
-    public static void recalibrate(SwerveModule ...modules) {
+    public static void recalibrate(SwerveModule... modules) {
         for (SwerveModule module : modules) {
             module.recalibrate();
         }
@@ -77,7 +77,21 @@ public class SwerveModule implements Sendable{
 
     public final double MAX_SPEED_METERS_PER_SECOND;
 
-    protected SwerveModule(Translation2d location, Supplier<Double> speedSupplier, Supplier<Rotation2d> angleSupplier, Supplier<Double> distanceSupplier, Consumer<Double> speedConsumer, Consumer<Rotation2d> angleConsumer, Runnable recal, double maxSpeed) {
+    private final Object driveMotor;
+    private final Object turnMotor;
+
+    protected SwerveModule(
+        Translation2d location,
+        Supplier<Double> speedSupplier,
+        Supplier<Rotation2d> angleSupplier,
+        Supplier<Double> distanceSupplier,
+        Consumer<Double> speedConsumer,
+        Consumer<Rotation2d> angleConsumer,
+        Runnable recal,
+        double maxSpeed,
+        Object driveMotor,
+        Object turnMotor
+    ) {
         this.location = location;
         this.speedSupplier = speedSupplier;
         this.angleSupplier = angleSupplier;
@@ -86,6 +100,8 @@ public class SwerveModule implements Sendable{
         this.speedConsumer = speedConsumer;
         this.recalibrate = recal;
         this.MAX_SPEED_METERS_PER_SECOND = maxSpeed;
+        this.driveMotor = driveMotor;
+        this.turnMotor = turnMotor;
     }
 
     public SwerveModuleState getState() {
@@ -109,6 +125,30 @@ public class SwerveModule implements Sendable{
 
     public void recalibrate() {
         recalibrate.run();
+    }
+
+    /**
+     * Gets the drive motor of this swerve module.
+     * This will either be a CANSparkMax or a TalonFX.
+     * Passing the wrong type will cause a ClassCastException, so use this method wisely.
+     * @param <T> The type of the motor controller object.
+     * @return The drive motor.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getDriveMotor() {
+        return (T) driveMotor;
+    }
+
+    /**
+     * Gets the turn module of this swerve module.
+     * This will either be a CANSparkMax or a TalonFX.
+     * Passing the wrong type will cause a ClassCastException, so use this method wisely.
+     * @param <T> The type of the motor controller object.
+     * @return The turn motor.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getTurnMotor() {
+        return (T) turnMotor;
     }
 
     @Override

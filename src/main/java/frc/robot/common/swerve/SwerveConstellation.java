@@ -1,7 +1,3 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.common.swerve;
 
 import edu.wpi.first.math.geometry.Translation2d;
@@ -13,14 +9,14 @@ import edu.wpi.first.math.trajectory.constraint.SwerveDriveKinematicsConstraint;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 
-/** Add your docs here. */
+/** Represents a collection of swerve modules. */
 public class SwerveConstellation implements Sendable {
     public final SwerveModule[] modules;
     public final SwerveDriveKinematics kinematics;
     public final SwerveDriveKinematicsConstraint kinematicsConstraint;
     public final double MAX_SPEED_METERS_PER_SECOND;
 
-    public SwerveConstellation(SwerveModule ...modules) {
+    public SwerveConstellation(SwerveModule... modules) {
         this.modules = modules;
         this.kinematics = SwerveModule.computeKinematics(modules);
 

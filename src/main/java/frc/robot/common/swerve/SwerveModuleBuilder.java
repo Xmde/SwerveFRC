@@ -1,12 +1,7 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.common.swerve;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -14,13 +9,12 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.ControlType;
-
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 
-/** Add your docs here. */
+/** Constructs an individual SwerveModule. */
 public class SwerveModuleBuilder {
 
     public static enum SWERVE_MODULE_PRESETS {
@@ -272,7 +266,18 @@ public class SwerveModuleBuilder {
             throw new IllegalStateException("Something went wrong building the SwerveModule");
         }
 
-        return new SwerveModule(location, speedSupplier, angleSupplier, distanceSupplier, speedConsumer, angleConsumer, recalibrate, maxSpeedMPS);
+        return new SwerveModule(
+            location,
+            speedSupplier,
+            angleSupplier,
+            distanceSupplier,
+            speedConsumer,
+            angleConsumer,
+            recalibrate,
+            maxSpeedMPS,
+            sparkMaxDriveMotor != null ? sparkMaxDriveMotor : falconDriveMotor,
+            sparkMaxTurnMotor != null ? sparkMaxTurnMotor : falconTurnMotor
+        );
     }
 
 }
