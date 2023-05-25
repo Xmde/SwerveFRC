@@ -15,21 +15,27 @@ public abstract class Swerve extends SubsystemBase {
 
     protected ChassisSpeeds chassisSpeeds = new ChassisSpeeds();
 
-    protected SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(
-        getConstellation().kinematics,
-        getGyroscopeRotation(),
-        getConstellation().modulePositions(),
-        new Pose2d(),
-        VecBuilder.fill(0.02, 0.02, 0.01),
-        VecBuilder.fill(0.1, 0.1, 0.01)
-    );
+    private SwerveDrivePoseEstimator poseEstimator;
+    protected SwerveDrivePoseEstimator getPoseEstimator() {
+        if (poseEstimator == null) {
+            poseEstimator = new SwerveDrivePoseEstimator(
+                getConstellation().kinematics,
+                getGyroscopeRotation(),
+                getConstellation().modulePositions(),
+                new Pose2d(),
+                VecBuilder.fill(0.02, 0.02, 0.01),
+                VecBuilder.fill(0.1, 0.1, 0.01)
+            );
+        }
+        return poseEstimator;
+    }
 
     public Pose2d getPose() {
-        return poseEstimator.getEstimatedPosition();
+        return getPoseEstimator().getEstimatedPosition();
     }
 
     public void setPose(Pose2d pose) {
-        poseEstimator.resetPosition(getGyroscopeRotation(), getConstellation().modulePositions(), pose);
+        getPoseEstimator().resetPosition(getGyroscopeRotation(), getConstellation().modulePositions(), pose);
     }
 
     public void drive(ChassisSpeeds chassisSpeeds) {
@@ -44,7 +50,7 @@ public abstract class Swerve extends SubsystemBase {
     public void periodic() {
         // This method will be called once per scheduler run
         SwerveConstellation constellation = getConstellation();
-        poseEstimator.update(getGyroscopeRotation(), constellation.modulePositions());
+        getPoseEstimator().update(getGyroscopeRotation(), constellation.modulePositions());
         constellation.setModuleStates(chassisSpeeds);
         constellation.recalibrate();
     }

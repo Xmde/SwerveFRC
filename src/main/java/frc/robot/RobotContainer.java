@@ -1,15 +1,34 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
+import com.ctre.phoenix.sensors.CANCoder;
+import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.commands.ArcadeDrive;
+import frc.robot.oi.drivers.ControllerDriver;
+import frc.robot.subsystems.Drivetrain;
+import frc.robot.utilities.lists.Ports;
 
 public class RobotContainer {
+  private Drivetrain drivetrain;
+  private AHRS gyro;
+  private ArcadeDrive drive;
+  private ControllerDriver driverXBox;
+
   public RobotContainer() {
     configureBindings();
+    gyro = new AHRS();
+    drivetrain = new Drivetrain(gyro);
+    driverXBox = new ControllerDriver(Ports.OI.DRIVER_XBOX_PORT);
+    drive = new ArcadeDrive(drivetrain, driverXBox.leftY, driverXBox.leftX, driverXBox.rightX);
+    drivetrain.setDefaultCommand(drive);
+    SmartDashboard.putData("Drivetrain module 0", drivetrain.mod0);
+    SmartDashboard.putData("Drivetrain module 1", drivetrain.mod1);
+    SmartDashboard.putData("Drivetrain module 2", drivetrain.mod2);
+    SmartDashboard.putData("Drivetrain module 3", drivetrain.mod3);
+    SmartDashboard.putData("drivetrain", drivetrain);
   }
 
   private void configureBindings() {}

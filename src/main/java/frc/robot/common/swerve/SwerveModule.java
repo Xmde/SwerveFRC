@@ -154,8 +154,8 @@ public class SwerveModule implements Sendable {
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.addDoubleProperty("Speed (Real MPS)", speedSupplier::get, null);
-        builder.addDoubleProperty("Angle (Real Deg)", () -> angleSupplier.get().getDegrees(), null);
+        builder.addDoubleProperty("Angle (Real Deg)", () -> angleSupplier.get().getRadians(), null);
         builder.addDoubleProperty("Speed (Target MPS)", () -> targetState.speedMetersPerSecond, null);
-        builder.addDoubleProperty("Angle (Target Deg)", () -> targetState.angle.getDegrees(), null);    
+        builder.addDoubleProperty("Angle (Target Deg)", () -> targetState.angle.getRadians(), null);    
     }
 }
