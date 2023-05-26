@@ -1,10 +1,8 @@
 package frc.robot;
 
-import com.ctre.phoenix.sensors.CANCoder;
 import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ArcadeDrive;
 import frc.robot.oi.drivers.ControllerDriver;
@@ -22,7 +20,7 @@ public class RobotContainer {
     gyro = new AHRS();
     drivetrain = new Drivetrain(gyro);
     driverXBox = new ControllerDriver(Ports.OI.DRIVER_XBOX_PORT);
-    drive = new ArcadeDrive(drivetrain, driverXBox.leftY, driverXBox.leftX, driverXBox.rightX);
+    drive = new ArcadeDrive(drivetrain, driverXBox.leftY, driverXBox.leftX, driverXBox.rightX, driverXBox.dPadDown, driverXBox.buttonA);
     drivetrain.setDefaultCommand(drive);
     SmartDashboard.putData("Drivetrain module 0", drivetrain.mod0);
     SmartDashboard.putData("Drivetrain module 1", drivetrain.mod1);

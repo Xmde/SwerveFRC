@@ -2,6 +2,9 @@ package frc.robot.common.swerve;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import javax.naming.directory.InvalidAttributesException;
+
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -18,18 +21,22 @@ import edu.wpi.first.math.util.Units;
 public class SwerveModuleBuilder {
 
     public static enum SWERVE_MODULE_PRESETS {
-        SDS_MK4i_L1(8.14, 150.0/7.0, Units.inchesToMeters(4)),
-        SDS_MK4i_L2(6.75, 150.0/7.0, Units.inchesToMeters(4)),
-        SDS_MK4i_L3(6.12, 150.0/7.0, Units.inchesToMeters(4));
+        SDS_MK4i_L1(8.14, 150.0/7.0, Units.inchesToMeters(4), new double[]{0.0, 0.0, 0.0}, 0.533333333333),
+        SDS_MK4i_L2(6.75, 150.0/7.0, Units.inchesToMeters(4), new double[]{1, 0, 0.005}, 0.533333333333),
+        SDS_MK4i_L3(6.12, 150.0/7.0, Units.inchesToMeters(4), new double[]{0.0, 0.0, 0.0}, 0.533333333333);
 
         public final double driveGearRatio;
         public final double turnGearRatio;
         public final double WheelDiameter;
+        public final double[] turnPID;
+        public final double turnToDrive;
 
-        SWERVE_MODULE_PRESETS(double driveGearRatio, double turnGearRatio, double WheelDiameter) {
+        SWERVE_MODULE_PRESETS(double driveGearRatio, double turnGearRatio, double WheelDiameter, double[] turnPID, double turnToDrive) {
             this.driveGearRatio = driveGearRatio;
             this.turnGearRatio = turnGearRatio;
             this.WheelDiameter = WheelDiameter;
+            this.turnPID = turnPID;
+            this.turnToDrive = turnToDrive;
         }
     }
 
@@ -46,6 +53,7 @@ public class SwerveModuleBuilder {
     private double turnI = 0;
     private double turnD = 0;
     private double driveMotorMaxRPM = 0;
+    private double turnToDriveRatio = 0; // This is here because for some modules turning the turn motor also spins the wheel.
     
     private CANSparkMax sparkMaxDriveMotor;
     private CANSparkMax sparkMaxTurnMotor;
@@ -53,8 +61,6 @@ public class SwerveModuleBuilder {
     private TalonFX falconTurnMotor;
     
     private Supplier<Double> turnEncoderAbsolute; // In radians the encoder reads positive is counterclockwise
-    private double turnEncoderAbsoluteRatio = 1; // A ratio of 2 means that the encoder reads twice as fast as the wheel
-    private double turnEncoderAbsoluteOffset = 0; // In radians positive is counterclockwise
 
     private boolean built = false; // If the module has been built
 
@@ -67,6 +73,10 @@ public class SwerveModuleBuilder {
         this.driveGearRatio = preset.driveGearRatio;
         this.turnGearRatio = preset.turnGearRatio;
         this.WheelDiameter = preset.WheelDiameter;
+        this.turnP = preset.turnPID[0];
+        this.turnI = preset.turnPID[1];
+        this.turnD = preset.turnPID[2];
+        this.turnToDriveRatio = preset.turnToDrive;
     }
 
     public SwerveModuleBuilder location(Translation2d location) {
@@ -97,6 +107,13 @@ public class SwerveModuleBuilder {
         this.driveP = driveP;
         this.driveI = driveI;
         this.driveD = driveD;
+        return this;
+    }
+    public SwerveModuleBuilder drivePID(double[] pid) {
+        if (pid.length != 3) return this;
+        this.driveP = pid[0];
+        this.driveI = pid[1];
+        this.driveD = pid[2];
         return this;
     }
     public SwerveModuleBuilder turnPID(double turnP, double turnI, double turnD) {
@@ -140,19 +157,10 @@ public class SwerveModuleBuilder {
         CANCoder canCoder = new CANCoder(deviceID);
         canCoder.configFactoryDefault();
         canCoder.configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180);
+        canCoder.configMagnetOffset(Math.toDegrees(offset));
         this.turnEncoderAbsolute = () -> {
             return Math.toRadians(canCoder.getAbsolutePosition());
         };
-        this.turnEncoderAbsoluteOffset = offset;
-        return this;
-    }
-
-    public SwerveModuleBuilder turnEncoderAbsoluteRatio(double turnEncoderAbsoluteRatio) {
-        this.turnEncoderAbsoluteRatio = turnEncoderAbsoluteRatio;
-        return this;
-    }
-    public SwerveModuleBuilder turnEncoderAbsoluteOffset(double turnEncoderAbsoluteOffset) {
-        this.turnEncoderAbsoluteOffset = turnEncoderAbsoluteOffset;
         return this;
     }
 
@@ -193,6 +201,7 @@ public class SwerveModuleBuilder {
         
         Supplier<Double> speedSupplier;
         Supplier<Rotation2d> angleSupplier;
+        Supplier<Rotation2d> angleSpeedSupplier;
         Supplier<Double> distanceSupplier;
         Consumer<Double> speedConsumer;
         Consumer<Rotation2d> angleConsumer;
@@ -205,8 +214,8 @@ public class SwerveModuleBuilder {
 
         if (sparkMaxDriveMotor != null) {
             RelativeEncoder encoder = sparkMaxDriveMotor.getEncoder();
-            encoder.setPositionConversionFactor(1 / (driveGearRatio * WheelDiameter * Math.PI)); // TODO Check to make sure this is accurate
-            encoder.setVelocityConversionFactor(1 / (driveGearRatio * WheelDiameter * Math.PI)); // TODO Check to make sure this is accurate
+            encoder.setPositionConversionFactor((WheelDiameter * Math.PI) / (driveGearRatio)); // TODO Check to make sure this is accurate
+            encoder.setVelocityConversionFactor((WheelDiameter * Math.PI) / (driveGearRatio * 60)); // TODO Check to make sure this is accurate
             distanceSupplier = encoder::getPosition;
             speedSupplier = encoder::getVelocity;
             SparkMaxPIDController pidController = sparkMaxDriveMotor.getPIDController();
@@ -229,10 +238,14 @@ public class SwerveModuleBuilder {
 
         if (sparkMaxTurnMotor != null) {
             RelativeEncoder encoder = sparkMaxTurnMotor.getEncoder();
-            encoder.setPositionConversionFactor(1 / (turnGearRatio * 2 * Math.PI)); // TODO Check to make sure this is accurate
-            encoder.setVelocityConversionFactor(1 / (turnGearRatio * 2 * Math.PI)); // TODO Check to make sure this is accurate
+            sparkMaxTurnMotor.setInverted(true);
+            encoder.setPositionConversionFactor((2 * Math.PI) / (turnGearRatio)); // TODO Check to make sure this is accurate
+            encoder.setVelocityConversionFactor((2 * Math.PI) / (turnGearRatio)); // TODO Check to make sure this is accurate
             angleSupplier = () -> {
                 return new Rotation2d(encoder.getPosition());
+            };
+            angleSpeedSupplier = () -> {
+                return new Rotation2d(encoder.getVelocity());
             };
             SparkMaxPIDController pidController = sparkMaxTurnMotor.getPIDController();
             pidController.setP(turnP, 0);
@@ -244,33 +257,70 @@ public class SwerveModuleBuilder {
             };
             // Only recalibrate if the error is more than 0.5 degree on either side
             recalibrate = () -> {
-                double error = turnEncoderAbsolute.get() * (1 / turnEncoderAbsoluteRatio) + turnEncoderAbsoluteOffset - encoder.getPosition();
+                // Convert the continus 360 to a +-180.
+                double encoderAngle = Math.toDegrees(encoder.getPosition()) % 360;
+                encoderAngle = (encoderAngle + 360) % 360;
+                if (encoderAngle > 180) encoderAngle -= 360;
+
+                double error = turnEncoderAbsolute.get() - Math.toRadians(encoderAngle);
+                // System.out.println(angleSpeedSupplier.get().getDegrees());
                 if (Math.abs(error) > Math.toRadians(0.5)) {
-                    encoder.setPosition(turnEncoderAbsolute.get() * (1 / turnEncoderAbsoluteRatio) + turnEncoderAbsoluteOffset);
+                    // System.out.println(String.format("AbsEnc: %.2f, Enc: %.2f", turnEncoderAbsolute.get(), encoder.getPosition()));
+                    System.out.println("RECAL");
+                    double setAngle = Math.toDegrees(turnEncoderAbsolute.get());
+
+                    // Sets the encoder position to one that it is close to.
+                    // Only does this if the error is small because it might mess things up at startup.
+                    if (Math.abs(error) < Math.toRadians(5)) {
+                        double currentPos = Math.toDegrees(encoder.getPosition());
+                        if (setAngle > 0) {
+                            setAngle = (Math.floor(currentPos / 360) * 360) + setAngle;
+                        } else {
+                            setAngle = (Math.ceil(currentPos / 360) * 360) + setAngle;
+                        }
+                        if (setAngle - currentPos > 180) {
+                            setAngle -= 360;
+                        }
+                        if (currentPos - setAngle > 180) {
+                            setAngle += 360;
+                        }
+                    }
+
+                    // I did all my math in degrees to convert back to radians.
+                    encoder.setPosition(Math.toRadians(setAngle));
                 }
             };
         } else if (falconTurnMotor != null) {
             // TODO
             angleSupplier = null;
             angleConsumer = null;
+            angleSpeedSupplier = null;
             throw new IllegalStateException("Falcons are not supported yet");
         } else {
             throw new IllegalStateException("Turn motor has not been set");
         }
 
-        maxSpeedMPS = driveMotorMaxRPM * driveGearRatio * WheelDiameter * Math.PI / 60;
+        maxSpeedMPS = (driveMotorMaxRPM * WheelDiameter * Math.PI) / (driveGearRatio * 60);
 
         built = true;
 
-        if (location == null || speedSupplier == null || angleSupplier == null || distanceSupplier == null || speedConsumer == null || angleConsumer == null || recalibrate == null || maxSpeedMPS == 0) {
+        if (location == null || speedSupplier == null || angleSupplier == null || distanceSupplier == null || speedConsumer == null || angleConsumer == null || angleSpeedSupplier == null || recalibrate == null || maxSpeedMPS == 0) {
             throw new IllegalStateException("Something went wrong building the SwerveModule");
         }
 
+        Supplier<Double> compensatedDistanceSupplier = () -> {
+            return distanceSupplier.get() + (angleSupplier.get().getRotations() * turnToDriveRatio * WheelDiameter * Math.PI);
+        };
+
+        Supplier<Double> compensatedSpeedSupplier = () -> {
+            return speedSupplier.get() + (angleSpeedSupplier.get().getRotations() * turnToDriveRatio * WheelDiameter * Math.PI / 60);
+        };
+
         return new SwerveModule(
             location,
-            speedSupplier,
+            compensatedSpeedSupplier,
             angleSupplier,
-            distanceSupplier,
+            compensatedDistanceSupplier,
             speedConsumer,
             angleConsumer,
             recalibrate,

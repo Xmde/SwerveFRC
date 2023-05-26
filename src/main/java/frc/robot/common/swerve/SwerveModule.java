@@ -14,7 +14,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 
 /** Represents an individual swerve module. */
 public class SwerveModule implements Sendable {
-    public static void setModuleStates(SwerveModuleState[] states, SwerveModule... modules) {
+    protected static void setModuleStates(SwerveModuleState[] states, SwerveModule... modules) {
         // First we need to check if there are the same number of modules and states
         if (modules.length != states.length) {
             throw new IllegalArgumentException("The number of modules and states must be the same");
@@ -45,7 +45,7 @@ public class SwerveModule implements Sendable {
         return positions.toArray(new SwerveModulePosition[0]);
     }
 
-    public static SwerveDriveKinematics computeKinematics(SwerveModule... modules) {
+    protected static SwerveDriveKinematics computeKinematics(SwerveModule... modules) {
         ArrayList<Translation2d> locations = new ArrayList<>();
 
         for (SwerveModule module : modules) {
@@ -59,7 +59,7 @@ public class SwerveModule implements Sendable {
         return kinematics.toChassisSpeeds(computeModuleStates(modules));
     }
 
-    public static void recalibrate(SwerveModule... modules) {
+    protected static void recalibrate(SwerveModule... modules) {
         for (SwerveModule module : modules) {
             module.recalibrate();
         }
@@ -112,18 +112,18 @@ public class SwerveModule implements Sendable {
         return new SwerveModulePosition(distanceSupplier.get(), angleSupplier.get());
     }
 
-    public void setState(SwerveModuleState state) {
+    protected void setState(SwerveModuleState state) {
         SwerveModuleState optimizedState = SwerveModuleState.optimize(state, getState().angle);
         speedConsumer.accept(optimizedState.speedMetersPerSecond);
         angleConsumer.accept(optimizedState.angle);
-        targetState = state;
+        targetState = optimizedState;
     }
 
     public Translation2d getLocation() {
         return location;
     }
 
-    public void recalibrate() {
+    protected void recalibrate() {
         recalibrate.run();
     }
 
@@ -154,8 +154,11 @@ public class SwerveModule implements Sendable {
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.addDoubleProperty("Speed (Real MPS)", speedSupplier::get, null);
-        builder.addDoubleProperty("Angle (Real Deg)", () -> angleSupplier.get().getRadians(), null);
+        builder.addDoubleProperty("Angle (Real Deg)", () -> angleSupplier.get().getDegrees(), null);
+        builder.addDoubleProperty("Angle (Real Rad)", () -> angleSupplier.get().getRadians(), null);
         builder.addDoubleProperty("Speed (Target MPS)", () -> targetState.speedMetersPerSecond, null);
-        builder.addDoubleProperty("Angle (Target Deg)", () -> targetState.angle.getRadians(), null);    
+        builder.addDoubleProperty("Angle (Target Deg)", () -> targetState.angle.getDegrees(), null);
+        builder.addDoubleProperty("Angle (Target Rad)", () -> targetState.angle.getRadians(), null);    
+
     }
 }

@@ -6,14 +6,18 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utilities.Functions;
 
 /** A swerve drivetrain subsystem will extend this class. */
 public abstract class Swerve extends SubsystemBase {
-    protected abstract SwerveConstellation getConstellation();
+    public abstract SwerveConstellation getConstellation();
     public abstract Rotation2d getGyroscopeRotation();
 
     protected ChassisSpeeds chassisSpeeds = new ChassisSpeeds();
+    protected Field2d field2d = new Field2d();
 
     private SwerveDrivePoseEstimator poseEstimator;
     protected SwerveDrivePoseEstimator getPoseEstimator() {
@@ -51,7 +55,16 @@ public abstract class Swerve extends SubsystemBase {
         // This method will be called once per scheduler run
         SwerveConstellation constellation = getConstellation();
         getPoseEstimator().update(getGyroscopeRotation(), constellation.modulePositions());
-        constellation.setModuleStates(chassisSpeeds);
+        field2d.setRobotPose(getPoseEstimator().getEstimatedPosition());
+        if (
+            Functions.withinTolerance(chassisSpeeds.vxMetersPerSecond, 0, 0.01) &&
+            Functions.withinTolerance(chassisSpeeds.vyMetersPerSecond, 0, 0.01) &&
+            Functions.withinTolerance(chassisSpeeds.omegaRadiansPerSecond, 0, 0.01)
+        ) {
+            constellation.stopModules();
+        } else {
+            constellation.setModuleStates(chassisSpeeds);
+        }
         constellation.recalibrate();
     }
 
@@ -63,5 +76,6 @@ public abstract class Swerve extends SubsystemBase {
         builder.addDoubleProperty("Velocity X", () -> getCurrentVelocity().vxMetersPerSecond, null);
         builder.addDoubleProperty("Velocity Y", () -> getCurrentVelocity().vyMetersPerSecond, null);
         builder.addDoubleProperty("Velocity Heading (Deg)", () -> getCurrentVelocity().omegaRadiansPerSecond * 180 / Math.PI, null);
+        SmartDashboard.putData("Field", field2d);
     }
 }
