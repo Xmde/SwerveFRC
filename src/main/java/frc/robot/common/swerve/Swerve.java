@@ -4,6 +4,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -17,6 +18,7 @@ public abstract class Swerve extends SubsystemBase {
     public abstract Rotation2d getGyroscopeRotation();
 
     protected ChassisSpeeds chassisSpeeds = new ChassisSpeeds();
+    protected Translation2d rotationPoint = new Translation2d();
     protected Field2d field2d = new Field2d();
 
     private SwerveDrivePoseEstimator poseEstimator;
@@ -44,6 +46,12 @@ public abstract class Swerve extends SubsystemBase {
 
     public void drive(ChassisSpeeds chassisSpeeds) {
         this.chassisSpeeds = chassisSpeeds;
+        this.rotationPoint = new Translation2d();
+    }
+
+    public void drive(ChassisSpeeds chassisSpeeds, Translation2d rotationPoint) {
+        this.chassisSpeeds = chassisSpeeds;
+        this.rotationPoint = rotationPoint;
     }
 
     public ChassisSpeeds getCurrentVelocity() {
@@ -63,7 +71,7 @@ public abstract class Swerve extends SubsystemBase {
         ) {
             constellation.stopModules();
         } else {
-            constellation.setModuleStates(chassisSpeeds);
+            constellation.setModuleStates(chassisSpeeds, rotationPoint);
         }
         constellation.recalibrate();
     }

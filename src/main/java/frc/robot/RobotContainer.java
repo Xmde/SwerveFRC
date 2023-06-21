@@ -20,7 +20,7 @@ public class RobotContainer {
     gyro = new AHRS();
     drivetrain = new Drivetrain(gyro);
     driverXBox = new ControllerDriver(Ports.OI.DRIVER_XBOX_PORT);
-    drive = new ArcadeDrive(drivetrain, driverXBox.leftY, driverXBox.leftX, driverXBox.rightX, driverXBox.dPadDown, driverXBox.buttonA);
+    drive = new ArcadeDrive(drivetrain, driverXBox.leftY, driverXBox.leftX, driverXBox.rightX, driverXBox.dPadDown, driverXBox.buttonA, driverXBox.buttonB);
     drivetrain.setDefaultCommand(drive);
     SmartDashboard.putData("Drivetrain module 0", drivetrain.mod0);
     SmartDashboard.putData("Drivetrain module 1", drivetrain.mod1);
